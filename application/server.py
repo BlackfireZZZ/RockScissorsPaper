@@ -15,7 +15,7 @@ class Moves:
         self.moves_list = deque(maxlen=max_length)
 
     def add_move(self, user_move: str, computer_move: str):
-        """Добавляет ход пары [computer_move, user_move] в список.
+        """Добавляет ход пары [user_move, computer_move] в список.
         Если длина больше max_length, автоматически удаляется первый элемент.
         """
         self.moves_list.append([user_move, computer_move])
@@ -33,6 +33,9 @@ class Moves:
 
 
 class Server:
+    """
+    Класс сервера игры.
+    """
     def __init__(self):
         self.moves = Moves()
         self.rounds = []    # 0 - победа пользователя, 1 - победа компьютера, 2 - ничья
@@ -45,16 +48,19 @@ class Server:
         }
 
     def start(self):
+        """
+        Запускает работу сервера: ввода хода пользователя, получение хода игрока и обработка результатов.
+        """
         print("Starting server...")
         print("Possible commands are: 'rock', 'paper', 'scissors', 'stop', 'stats'")
         print("")
         while True:
             user_move = self.get_user_move()
-            if user_move == "stop":
+            if user_move == "stop":    # остановка сервера
                 break
             if user_move == "stats":
                 continue
-            self.make_turn(user_move)
+            self.make_move(user_move)
             self.get_result()
 
     def get_less_common_user_move(self) -> str:
@@ -70,7 +76,7 @@ class Server:
                 count[move[1]] += 1
             return min(count, key=count.get)
 
-    def make_turn(self, user_move: str):
+    def make_move(self, user_move: str):
         possible_moves = ["rock", "paper", "scissors"]
         if len(self.rounds) == 0:
             computer_move = random.choice(possible_moves)
@@ -83,7 +89,7 @@ class Server:
             # ход пользователя
             if random_number < 5:
                 self.moves.add_move(user_move, generated_move)
-            if random_number == 5:  # с шансом 10  предполагаем, что пользователь сходит так, как ходил реже всего
+            elif random_number == 5:  # с шансом 10  предполагаем, что пользователь сходит так, как ходил реже всего
                 possible_user_move = self.get_less_common_user_move()
                 computer_move = self.get_win_of(possible_user_move)
                 self.moves.add_move(user_move, computer_move)
@@ -118,15 +124,18 @@ class Server:
                 self.moves.add_move(user_move, computer_move)
 
     def get_result(self):
+        """
+        Вычисляет результат последней игры, выводит его, а также обновялет статистику матчей
+        """
         last_move = self.moves.get_last_move()
         self.count_moves[last_move[0]] += 1
         self.count_moves[last_move[1]] += 1
         print(f'Computer move is {last_move[1]}')
-        if last_move[0] == last_move[1]:
+        if last_move[0] == last_move[1]:   # проверка на ничью
             self.rounds.append(2)
             self.result[2] += 1
             print("Draw")
-        elif last_move[1] == loses[last_move[0]]:
+        elif last_move[1] == loses[last_move[0]]:   # проверка на победу компьютера
             self.result[1] += 1
             self.rounds.append(1)
             print("Computer won!")
@@ -137,6 +146,9 @@ class Server:
         print("")
 
     def get_user_move(self) -> str:
+        """
+        Запрашивает у пользователя его ход
+        """
         move = input("Enter your move: ")
         move = move.lower()
         while move not in ["rock", "paper", "scissors", "stop", "stats"]:
@@ -145,7 +157,7 @@ class Server:
         if move == "stop":
             print("")
             print("Thank you for the game! Bye!")
-        elif move == "stats":
+        elif move == "stats":   # вывод статистики
             print(f"User: {self.result[0]} Computer: {self.result[1]} Draws: {self.result[2]}")
             print(f"Counted moves are.. Rock: {self.count_moves['rock']} Paper: {self.count_moves['paper']} "
                   f"Scissors: {self.count_moves['scissors']}")
